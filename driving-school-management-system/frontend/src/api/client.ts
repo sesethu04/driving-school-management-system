@@ -12,27 +12,27 @@ export interface Dashboard { completed: number; required: number; upcoming: numb
 
 export const api = axios.create({ baseURL: import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api', headers: { 'Content-Type': 'application/json' } });
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('driveright.token');
-  if (token) config.headers.Authorization = `Bearer ${token}`;
-  return config;
+    const token = localStorage.getItem('driveright.token');
+    if (token) config.headers.Authorization = `Bearer ${token}`;
+    return config;
 });
 api.interceptors.response.use((response) => response, (error: unknown) => {
-  if (axios.isAxiosError(error)) {
-    if (error.response?.status === 401 && !String(error.config?.url).includes('/auth/')) {
-      localStorage.removeItem('driveright.token');
-      localStorage.removeItem('driveright.user');
-      localStorage.removeItem('driveright.role');
-      if (window.location.pathname.startsWith('/app')) window.location.assign('/login');
+    if (axios.isAxiosError(error)) {
+        if (error.response?.status === 401 && !String(error.config?.url).includes('/auth/')) {
+            localStorage.removeItem('driveright.token');
+            localStorage.removeItem('driveright.user');
+            localStorage.removeItem('driveright.role');
+            if (window.location.pathname.startsWith('/app')) window.location.assign('/login');
+        }
+        if (error.response) {
+            const message = error.response.data?.message;
+            const detail = typeof message === 'string' ? message : Array.isArray(message) ? message.join(', ') : error.response.statusText;
+            error.message = `${detail || 'Request failed'} (HTTP ${error.response.status})`;
+        } else if (error.request) {
+            error.message = `Could not connect to the DriveRight API at ${api.defaults.baseURL}. Check that the backend is running.`;
+        }
     }
-    if (error.response) {
-      const message = error.response.data?.message;
-      const detail = typeof message === 'string' ? message : Array.isArray(message) ? message.join(', ') : error.response.statusText;
-      error.message = `${detail || 'Request failed'} (HTTP ${error.response.status})`;
-    } else if (error.request) {
-      error.message = `Could not connect to the DriveRight API at ${api.defaults.baseURL}. Check that the backend is running.`;
-    }
-  }
-  return Promise.reject(error);
+    return Promise.reject(error);
 });
 
 export const apiGet = async <T>(path: string) => (await api.get<T>(path)).data;
